@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboards | NexusAnalytics{% endblock %}
+{% block page_title %}Dashboards{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+  <form class="search-bar" method="get" style="flex:1;margin-bottom:0">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search dashboards...">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Category</option>
+      <option value="sales" {% if status_filter == 'sales' %}selected{% endif %}>Sales</option>
+      <option value="marketing" {% if status_filter == 'marketing' %}selected{% endif %}>Marketing</option>
+      <option value="finance" {% if status_filter == 'finance' %}selected{% endif %}>Finance</option>
+      <option value="operations" {% if status_filter == 'operations' %}selected{% endif %}>Operations</option>
+      <option value="hr" {% if status_filter == 'hr' %}selected{% endif %}>HR</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+  </form>
+  <a href="/dashboards/create/" class="btn btn-primary">+ New Dashboard</a>
+</div>
+
+<div class="card">
+  {% if records %}
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Category</th><th>Owner</th><th>Widgets</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td><a href="/dashboards/{{ r.pk }}/edit/"><strong>{{ r.name }}</strong></a></td>
+        <td><span class="badge badge-blue">{{ r.get_category_display }}</span></td>
+        <td>{{ r.owner|default:"-" }}</td>
+        <td>{{ r.widgets|default:"-" }}</td>
+        <td><span class="badge badge-blue">{{ r.get_status_display }}</span></td>
+        <td class="actions">
+          <a href="/dashboards/{{ r.pk }}/edit/" class="btn btn-primary btn-sm">Edit</a>
+          <form method="post" action="/dashboards/{{ r.pk }}/delete/" style="display:inline" onsubmit="return confirm('Delete?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Del</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <p>No dashboards found.</p>
+    <a href="/dashboards/create/" class="btn btn-primary" style="margin-top:1rem">Create Dashboard</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
