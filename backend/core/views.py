@@ -3,9 +3,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.conf import settings
-from .models import Record
+from django.db.models import Sum, Count
+from .models import Dashboard, Report, DataSource
 
 
 def login_view(request):
@@ -30,67 +29,171 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    total = Record.objects.count()
-    active = Record.objects.filter(status='active').count()
-    pending = Record.objects.filter(status='pending').count()
-    inactive = Record.objects.filter(status='inactive').count()
-    recent = Record.objects.all()[:10]
-    return render(request, 'dashboard.html', {
-        'total': total, 'active': active, 'pending': pending,
-        'inactive': inactive, 'recent': recent,
-    })
+    ctx = {}
+    ctx['dashboard_count'] = Dashboard.objects.count()
+    ctx['dashboard_sales'] = Dashboard.objects.filter(category='sales').count()
+    ctx['dashboard_marketing'] = Dashboard.objects.filter(category='marketing').count()
+    ctx['dashboard_finance'] = Dashboard.objects.filter(category='finance').count()
+    ctx['report_count'] = Report.objects.count()
+    ctx['report_chart'] = Report.objects.filter(report_type='chart').count()
+    ctx['report_table'] = Report.objects.filter(report_type='table').count()
+    ctx['report_kpi'] = Report.objects.filter(report_type='kpi').count()
+    ctx['datasource_count'] = DataSource.objects.count()
+    ctx['datasource_database'] = DataSource.objects.filter(source_type='database').count()
+    ctx['datasource_api'] = DataSource.objects.filter(source_type='api').count()
+    ctx['datasource_csv'] = DataSource.objects.filter(source_type='csv').count()
+    ctx['recent'] = Dashboard.objects.all()[:10]
+    return render(request, 'dashboard.html', ctx)
 
 
 @login_required
-def records_view(request):
-    records = Record.objects.all()
-    status_filter = request.GET.get('status', '')
+def dashboard_list(request):
+    qs = Dashboard.objects.all()
     search = request.GET.get('search', '')
-    if status_filter:
-        records = records.filter(status=status_filter)
     if search:
-        records = records.filter(name__icontains=search)
-    return render(request, 'records.html', {'records': records, 'status_filter': status_filter, 'search': search})
+        qs = qs.filter(name__icontains=search)
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        qs = qs.filter(category=status_filter)
+    return render(request, 'dashboard_list.html', {'records': qs, 'search': search, 'status_filter': status_filter})
 
 
 @login_required
-def record_create(request):
+def dashboard_create(request):
     if request.method == 'POST':
-        Record.objects.create(
-            name=request.POST.get('name', ''),
-            description=request.POST.get('description', ''),
-            status=request.POST.get('status', 'active'),
-            email=request.POST.get('email', ''),
-            phone=request.POST.get('phone', ''),
-            amount=request.POST.get('amount', 0) or 0,
-            notes=request.POST.get('notes', ''),
-        )
-        return redirect('/records/')
-    return render(request, 'record_form.html', {'editing': False})
+        obj = Dashboard()
+        obj.name = request.POST.get('name', '')
+        obj.category = request.POST.get('category', '')
+        obj.owner = request.POST.get('owner', '')
+        obj.widgets = request.POST.get('widgets') or 0
+        obj.status = request.POST.get('status', '')
+        obj.description = request.POST.get('description', '')
+        obj.save()
+        return redirect('/dashboards/')
+    return render(request, 'dashboard_form.html', {'editing': False})
 
 
 @login_required
-def record_edit(request, pk):
-    record = get_object_or_404(Record, pk=pk)
+def dashboard_edit(request, pk):
+    obj = get_object_or_404(Dashboard, pk=pk)
     if request.method == 'POST':
-        record.name = request.POST.get('name', record.name)
-        record.description = request.POST.get('description', record.description)
-        record.status = request.POST.get('status', record.status)
-        record.email = request.POST.get('email', record.email)
-        record.phone = request.POST.get('phone', record.phone)
-        record.amount = request.POST.get('amount', record.amount) or 0
-        record.notes = request.POST.get('notes', record.notes)
-        record.save()
-        return redirect('/records/')
-    return render(request, 'record_form.html', {'record': record, 'editing': True})
+        obj.name = request.POST.get('name', '')
+        obj.category = request.POST.get('category', '')
+        obj.owner = request.POST.get('owner', '')
+        obj.widgets = request.POST.get('widgets') or 0
+        obj.status = request.POST.get('status', '')
+        obj.description = request.POST.get('description', '')
+        obj.save()
+        return redirect('/dashboards/')
+    return render(request, 'dashboard_form.html', {'record': obj, 'editing': True})
 
 
 @login_required
-def record_delete(request, pk):
-    record = get_object_or_404(Record, pk=pk)
+def dashboard_delete(request, pk):
+    obj = get_object_or_404(Dashboard, pk=pk)
     if request.method == 'POST':
-        record.delete()
-    return redirect('/records/')
+        obj.delete()
+    return redirect('/dashboards/')
+
+
+@login_required
+def report_list(request):
+    qs = Report.objects.all()
+    search = request.GET.get('search', '')
+    if search:
+        qs = qs.filter(title__icontains=search)
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        qs = qs.filter(report_type=status_filter)
+    return render(request, 'report_list.html', {'records': qs, 'search': search, 'status_filter': status_filter})
+
+
+@login_required
+def report_create(request):
+    if request.method == 'POST':
+        obj = Report()
+        obj.title = request.POST.get('title', '')
+        obj.dashboard_name = request.POST.get('dashboard_name', '')
+        obj.report_type = request.POST.get('report_type', '')
+        obj.data_source = request.POST.get('data_source', '')
+        obj.schedule = request.POST.get('schedule', '')
+        obj.last_run = request.POST.get('last_run') or None
+        obj.save()
+        return redirect('/reports/')
+    return render(request, 'report_form.html', {'editing': False})
+
+
+@login_required
+def report_edit(request, pk):
+    obj = get_object_or_404(Report, pk=pk)
+    if request.method == 'POST':
+        obj.title = request.POST.get('title', '')
+        obj.dashboard_name = request.POST.get('dashboard_name', '')
+        obj.report_type = request.POST.get('report_type', '')
+        obj.data_source = request.POST.get('data_source', '')
+        obj.schedule = request.POST.get('schedule', '')
+        obj.last_run = request.POST.get('last_run') or None
+        obj.save()
+        return redirect('/reports/')
+    return render(request, 'report_form.html', {'record': obj, 'editing': True})
+
+
+@login_required
+def report_delete(request, pk):
+    obj = get_object_or_404(Report, pk=pk)
+    if request.method == 'POST':
+        obj.delete()
+    return redirect('/reports/')
+
+
+@login_required
+def datasource_list(request):
+    qs = DataSource.objects.all()
+    search = request.GET.get('search', '')
+    if search:
+        qs = qs.filter(name__icontains=search)
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        qs = qs.filter(source_type=status_filter)
+    return render(request, 'datasource_list.html', {'records': qs, 'search': search, 'status_filter': status_filter})
+
+
+@login_required
+def datasource_create(request):
+    if request.method == 'POST':
+        obj = DataSource()
+        obj.name = request.POST.get('name', '')
+        obj.source_type = request.POST.get('source_type', '')
+        obj.connection_string = request.POST.get('connection_string', '')
+        obj.status = request.POST.get('status', '')
+        obj.last_sync = request.POST.get('last_sync') or None
+        obj.records = request.POST.get('records') or 0
+        obj.save()
+        return redirect('/datasources/')
+    return render(request, 'datasource_form.html', {'editing': False})
+
+
+@login_required
+def datasource_edit(request, pk):
+    obj = get_object_or_404(DataSource, pk=pk)
+    if request.method == 'POST':
+        obj.name = request.POST.get('name', '')
+        obj.source_type = request.POST.get('source_type', '')
+        obj.connection_string = request.POST.get('connection_string', '')
+        obj.status = request.POST.get('status', '')
+        obj.last_sync = request.POST.get('last_sync') or None
+        obj.records = request.POST.get('records') or 0
+        obj.save()
+        return redirect('/datasources/')
+    return render(request, 'datasource_form.html', {'record': obj, 'editing': True})
+
+
+@login_required
+def datasource_delete(request, pk):
+    obj = get_object_or_404(DataSource, pk=pk)
+    if request.method == 'POST':
+        obj.delete()
+    return redirect('/datasources/')
 
 
 @login_required
@@ -98,12 +201,10 @@ def settings_view(request):
     return render(request, 'settings.html')
 
 
-# API endpoints
 @login_required
 def api_stats(request):
-    return JsonResponse({
-        'total': Record.objects.count(),
-        'active': Record.objects.filter(status='active').count(),
-        'pending': Record.objects.filter(status='pending').count(),
-        'inactive': Record.objects.filter(status='inactive').count(),
-    })
+    data = {}
+    data['dashboard_count'] = Dashboard.objects.count()
+    data['report_count'] = Report.objects.count()
+    data['datasource_count'] = DataSource.objects.count()
+    return JsonResponse(data)
