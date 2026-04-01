@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Datasources | NexusAnalytics{% endblock %}
+{% block page_title %}Datasources{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+  <form class="search-bar" method="get" style="flex:1;margin-bottom:0">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search datasources...">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Source Type</option>
+      <option value="database" {% if status_filter == 'database' %}selected{% endif %}>Database</option>
+      <option value="api" {% if status_filter == 'api' %}selected{% endif %}>API</option>
+      <option value="csv" {% if status_filter == 'csv' %}selected{% endif %}>CSV</option>
+      <option value="spreadsheet" {% if status_filter == 'spreadsheet' %}selected{% endif %}>Spreadsheet</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+  </form>
+  <a href="/datasources/create/" class="btn btn-primary">+ New DataSource</a>
+</div>
+
+<div class="card">
+  {% if records %}
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Source Type</th><th>Connection String</th><th>Status</th><th>Last Sync</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td><a href="/datasources/{{ r.pk }}/edit/"><strong>{{ r.name }}</strong></a></td>
+        <td><span class="badge badge-blue">{{ r.get_source_type_display }}</span></td>
+        <td>{{ r.connection_string|default:"-" }}</td>
+        <td><span class="badge badge-blue">{{ r.get_status_display }}</span></td>
+        <td style="color:var(--muted)">{{ r.last_sync|date:"M d, Y"|default:"-" }}</td>
+        <td class="actions">
+          <a href="/datasources/{{ r.pk }}/edit/" class="btn btn-primary btn-sm">Edit</a>
+          <form method="post" action="/datasources/{{ r.pk }}/delete/" style="display:inline" onsubmit="return confirm('Delete?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Del</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <p>No datasources found.</p>
+    <a href="/datasources/create/" class="btn btn-primary" style="margin-top:1rem">Create DataSource</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
