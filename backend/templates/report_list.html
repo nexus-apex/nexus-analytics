@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Reports | NexusAnalytics{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+  <form class="search-bar" method="get" style="flex:1;margin-bottom:0">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search reports...">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Report Type</option>
+      <option value="chart" {% if status_filter == 'chart' %}selected{% endif %}>Chart</option>
+      <option value="table" {% if status_filter == 'table' %}selected{% endif %}>Table</option>
+      <option value="kpi" {% if status_filter == 'kpi' %}selected{% endif %}>KPI</option>
+      <option value="funnel" {% if status_filter == 'funnel' %}selected{% endif %}>Funnel</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+  </form>
+  <a href="/reports/create/" class="btn btn-primary">+ New Report</a>
+</div>
+
+<div class="card">
+  {% if records %}
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Dashboard Name</th><th>Report Type</th><th>Data Source</th><th>Schedule</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td><a href="/reports/{{ r.pk }}/edit/"><strong>{{ r.title }}</strong></a></td>
+        <td>{{ r.dashboard_name|default:"-" }}</td>
+        <td><span class="badge badge-blue">{{ r.get_report_type_display }}</span></td>
+        <td>{{ r.data_source|default:"-" }}</td>
+        <td><span class="badge badge-blue">{{ r.get_schedule_display }}</span></td>
+        <td class="actions">
+          <a href="/reports/{{ r.pk }}/edit/" class="btn btn-primary btn-sm">Edit</a>
+          <form method="post" action="/reports/{{ r.pk }}/delete/" style="display:inline" onsubmit="return confirm('Delete?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Del</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <p>No reports found.</p>
+    <a href="/reports/create/" class="btn btn-primary" style="margin-top:1rem">Create Report</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
