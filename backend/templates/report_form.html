@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit{% else %}New{% endif %} Report | NexusAnalytics{% endblock %}
+{% block page_title %}{% if editing %}Edit Report{% else %}New Report{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:750px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ record.title|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Dashboard Name</label>
+        <input type="text" name="dashboard_name" value="{{ record.dashboard_name|default:'' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Report Type</label>
+        <select name="report_type">
+          <option value="chart" {% if record.report_type == 'chart' %}selected{% endif %}>Chart</option>
+          <option value="table" {% if record.report_type == 'table' %}selected{% endif %}>Table</option>
+          <option value="kpi" {% if record.report_type == 'kpi' %}selected{% endif %}>KPI</option>
+          <option value="funnel" {% if record.report_type == 'funnel' %}selected{% endif %}>Funnel</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Data Source</label>
+        <input type="text" name="data_source" value="{{ record.data_source|default:'' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Schedule</label>
+        <select name="schedule">
+          <option value="none" {% if record.schedule == 'none' %}selected{% endif %}>None</option>
+          <option value="daily" {% if record.schedule == 'daily' %}selected{% endif %}>Daily</option>
+          <option value="weekly" {% if record.schedule == 'weekly' %}selected{% endif %}>Weekly</option>
+          <option value="monthly" {% if record.schedule == 'monthly' %}selected{% endif %}>Monthly</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Last Run</label>
+        <input type="date" name="last_run" value="{{ record.last_run|date:'Y-m-d'|default:'' }}">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button type="submit" class="btn btn-primary">{% if editing %}Update{% else %}Create{% endif %} Report</button>
+      <a href="/reports/" class="btn" style="background:var(--border);color:var(--text)">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
