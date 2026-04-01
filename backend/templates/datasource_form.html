@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit{% else %}New{% endif %} DataSource | NexusAnalytics{% endblock %}
+{% block page_title %}{% if editing %}Edit DataSource{% else %}New DataSource{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:750px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" value="{{ record.name|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Source Type</label>
+        <select name="source_type">
+          <option value="database" {% if record.source_type == 'database' %}selected{% endif %}>Database</option>
+          <option value="api" {% if record.source_type == 'api' %}selected{% endif %}>API</option>
+          <option value="csv" {% if record.source_type == 'csv' %}selected{% endif %}>CSV</option>
+          <option value="spreadsheet" {% if record.source_type == 'spreadsheet' %}selected{% endif %}>Spreadsheet</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Connection String</label>
+        <input type="text" name="connection_string" value="{{ record.connection_string|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="connected" {% if record.status == 'connected' %}selected{% endif %}>Connected</option>
+          <option value="disconnected" {% if record.status == 'disconnected' %}selected{% endif %}>Disconnected</option>
+          <option value="error" {% if record.status == 'error' %}selected{% endif %}>Error</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Last Sync</label>
+        <input type="date" name="last_sync" value="{{ record.last_sync|date:'Y-m-d'|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Records</label>
+        <input type="number" name="records" value="{{ record.records|default:'0' }}">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button type="submit" class="btn btn-primary">{% if editing %}Update{% else %}Create{% endif %} DataSource</button>
+      <a href="/datasources/" class="btn" style="background:var(--border);color:var(--text)">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
