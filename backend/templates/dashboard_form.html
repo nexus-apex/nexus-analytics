@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit{% else %}New{% endif %} Dashboard | NexusAnalytics{% endblock %}
+{% block page_title %}{% if editing %}Edit Dashboard{% else %}New Dashboard{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:750px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" value="{{ record.name|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+          <option value="sales" {% if record.category == 'sales' %}selected{% endif %}>Sales</option>
+          <option value="marketing" {% if record.category == 'marketing' %}selected{% endif %}>Marketing</option>
+          <option value="finance" {% if record.category == 'finance' %}selected{% endif %}>Finance</option>
+          <option value="operations" {% if record.category == 'operations' %}selected{% endif %}>Operations</option>
+          <option value="hr" {% if record.category == 'hr' %}selected{% endif %}>HR</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Owner</label>
+        <input type="text" name="owner" value="{{ record.owner|default:'' }}">
+      </div>
+      <div class="form-group">
+        <label>Widgets</label>
+        <input type="number" name="widgets" value="{{ record.widgets|default:'0' }}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="active" {% if record.status == 'active' %}selected{% endif %}>Active</option>
+          <option value="draft" {% if record.status == 'draft' %}selected{% endif %}>Draft</option>
+          <option value="archived" {% if record.status == 'archived' %}selected{% endif %}>Archived</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea name="description">{{ record.description|default:'' }}</textarea>
+    </div>
+
+    <div style="display:flex;gap:0.75rem;margin-top:1rem">
+      <button type="submit" class="btn btn-primary">{% if editing %}Update{% else %}Create{% endif %} Dashboard</button>
+      <a href="/dashboards/" class="btn" style="background:var(--border);color:var(--text)">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
